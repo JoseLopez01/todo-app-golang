@@ -113,5 +113,9 @@ func getStatusCode(err error) int {
 		return http.StatusConflict
 	}
 
+	if errors.Is(err, todo.ErrTodoNotFound) {
+		return http.StatusNotFound
+	}
+
 	return http.StatusInternalServerError
 }

@@ -3,6 +3,7 @@ package todo
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -21,6 +22,7 @@ var (
 	ErrWhileDeleting   = fmt.Errorf("error while deleting")
 	ErrWhileUpdating   = fmt.Errorf("error while updating")
 	ErrInvalidID       = fmt.Errorf("invalid id")
+	ErrTodoNotFound    = fmt.Errorf("todo not found")
 )
 
 //go:generate mockgen -destination mocks/repository_mock.go -package mocks . Repository
@@ -85,8 +87,12 @@ func (r *RedisRepository) GetByID(ctx context.Context, email string, id string) 
 
 	userKey := fmt.Sprintf(redisKey, email)
 	result, err := r.client.HGet(ctx, userKey, id).Result()
-	if err != nil {
+	if err != nil && !errors.Is(err, redis.Nil) {
 		return models.Todo{}, ErrWhileRetrieving
+	}
+
+	if errors.Is(err, redis.Nil) {
+		return models.Todo{}, ErrTodoNotFound
 	}
 
 	var todo models.Todo
@@ -103,7 +109,16 @@ func (r *RedisRepository) Delete(ctx context.Context, email string, id string) e
 	}
 
 	userKey := fmt.Sprintf(redisKey, email)
-	err := r.client.HDel(ctx, userKey, id).Err()
+	exists, err := r.client.HExists(ctx, userKey, id).Result()
+	if err != nil {
+		return ErrWhileDeleting
+	}
+
+	if !exists {
+		return ErrTodoNotFound
+	}
+
+	err = r.client.HDel(ctx, userKey, id).Err()
 	if err != nil {
 		return ErrWhileDeleting
 	}
@@ -116,12 +131,21 @@ func (r *RedisRepository) Update(ctx context.Context, email string, id string, t
 		return models.Todo{}, err
 	}
 
+	userKey := fmt.Sprintf(redisKey, email)
+	exists, err := r.client.HExists(ctx, userKey, id).Result()
+	if err != nil {
+		return models.Todo{}, ErrWhileUpdating
+	}
+
+	if !exists {
+		return models.Todo{}, ErrTodoNotFound
+	}
+
 	todoBytes, err := json.Marshal(todo)
 	if err != nil {
 		return models.Todo{}, ErrWhileUpdating
 	}
 
-	userKey := fmt.Sprintf(redisKey, email)
 	err = r.client.HSet(ctx, userKey, id, todoBytes).Err()
 	if err != nil {
 		return models.Todo{}, ErrWhileUpdating

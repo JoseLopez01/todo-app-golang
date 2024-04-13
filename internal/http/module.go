@@ -18,15 +18,15 @@ const (
 var Module = fx.Module(
 	"http-module",
 	fx.Provide(
-		StartServer,
-		fx.Annotate(NewEngine, fx.ResultTags(engineTag)),
+		fx.Annotate(StartServer, fx.ResultTags(engineTag)),
 		fx.Annotate(StartRoutes, fx.ParamTags(engineTag, controllersTag)),
 		AsController(controllers.NewTodosController),
 	),
 	fx.Invoke(func(*gin.RouterGroup) {}),
 )
 
-func StartServer(configs config.Config, engine *gin.Engine, lc fx.Lifecycle) bool {
+func StartServer(configs config.Config, lc fx.Lifecycle) *gin.Engine {
+	engine := gin.Default()
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go func() {
@@ -39,7 +39,7 @@ func StartServer(configs config.Config, engine *gin.Engine, lc fx.Lifecycle) boo
 		},
 	})
 
-	return true
+	return engine
 }
 
 func AsController(f any) any {

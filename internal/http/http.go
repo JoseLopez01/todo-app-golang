@@ -9,11 +9,6 @@ type Controller interface {
 	CreateRoutes(group *gin.RouterGroup)
 }
 
-func NewEngine() *gin.Engine {
-	engine := gin.Default()
-	return engine
-}
-
 func StartRoutes(engine *gin.Engine, controllers []Controller) *gin.RouterGroup {
 	group := engine.Group("/api")
 	for _, controller := range controllers {
