@@ -10,15 +10,6 @@ import (
 	"todo-app/internal/http/mocks"
 )
 
-func TestNewEngine(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	t.Run("should create new engine with default config", func(t *testing.T) {
-		engine := NewEngine()
-		assert.NotNil(t, engine)
-	})
-}
-
 func TestStart(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

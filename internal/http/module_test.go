@@ -26,8 +26,6 @@ func TestModule(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		app := fxtest.New(
 			t,
-			Module,
-			fx.Supply(gin.Default()),
 			fx.Supply(config.Config{}),
 			fx.Provide(
 				fx.Annotate(
@@ -36,10 +34,17 @@ func TestModule(t *testing.T) {
 					},
 					fx.As(new(todo.Service)),
 				),
+				fx.Annotate(
+					func(engine *gin.Engine) bool {
+						return engine != nil
+					},
+					fx.ParamTags(engineTag),
+				),
 			),
-			fx.Invoke(func(started bool) {
-				assert.True(t, started)
+			fx.Invoke(func(engine bool) {
+				assert.True(t, engine)
 			}),
+			Module,
 		)
 		defer app.RequireStart().RequireStop()
 	})

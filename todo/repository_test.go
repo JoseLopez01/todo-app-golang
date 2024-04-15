@@ -84,8 +84,21 @@ func TestRedisRepository_Delete(t *testing.T) {
 		client := getRedisClient(t)
 		ctx := context.TODO()
 
+		todo, err := json.Marshal(models.Todo{
+			ID:          "279f4a4e-48dc-4569-83df-8b30ce488599",
+			Name:        "name",
+			Description: "description",
+			StartDate:   time.Now(),
+			DueDate:     time.Now().Add(time.Minute * 5),
+		})
+		assert.NoError(t, err)
+
+		userKey := fmt.Sprintf(redisKey, "test@test.test")
+		err = client.HSet(ctx, userKey, "279f4a4e-48dc-4569-83df-8b30ce488599", todo).Err()
+		assert.NoError(t, err)
+
 		repository := NewRedisRepository(client)
-		err := repository.Delete(ctx, "test@test.test", "279f4a4e-48dc-4569-83df-8b30ce488599")
+		err = repository.Delete(ctx, "test@test.test", "279f4a4e-48dc-4569-83df-8b30ce488599")
 		assert.NoError(t, err)
 	})
 }
@@ -216,6 +229,19 @@ func TestRedisRepository_Update(t *testing.T) {
 	t.Run("should return the todo if no error happens", func(t *testing.T) {
 		client := getRedisClient(t)
 		ctx := context.TODO()
+
+		todo, err := json.Marshal(models.Todo{
+			ID:          "279f4a4e-48dc-4569-83df-8b30ce488599",
+			Name:        "name",
+			Description: "description",
+			StartDate:   time.Now(),
+			DueDate:     time.Now().Add(time.Minute * 5),
+		})
+		assert.NoError(t, err)
+
+		userKey := fmt.Sprintf(redisKey, "test@test.test")
+		err = client.HSet(ctx, userKey, "279f4a4e-48dc-4569-83df-8b30ce488599", todo).Err()
+		assert.NoError(t, err)
 
 		repository := NewRedisRepository(client)
 		response, err := repository.Update(ctx, "test@test.test", "279f4a4e-48dc-4569-83df-8b30ce488599", models.Todo{})
